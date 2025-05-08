@@ -33,6 +33,12 @@ def show_banner():
     """)
   
   
+# ===== Modifica ArgumentParser para adicionar tela no -h =====
+class CustomArgumentParser(argparse.ArgumentParser):
+    def print_help(self, file=None):
+        show_banner()  # Exibe o banner quando -h ou --help é chamado
+  
+  
 # ===== Main =====  
 if __name__ == "__main__":
   config = load_config()
@@ -42,7 +48,7 @@ if __name__ == "__main__":
     sys.exit(0)
   
   # CLI args
-  parser = argparse.ArgumentParser(description="XSS Scanner (xis-essi-essi!)")
+  parser = CustomArgumentParser(description="XSS Scanner (xis-essi-essi!)")
   parser.add_argument("-u", "--url", required=True, help="Domínio alvo")
   parser.add_argument("-p", "--payloads", default=config.get("payloads_file", "payloads.txt"), help="Arquivo com os payloads que serão testados")
   args = parser.parse_args()
