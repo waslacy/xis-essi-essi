@@ -4,8 +4,13 @@ import sys
 
 # ===== Carrega yaml =====
 def load_config(path="config.yaml"):
-  with open(path, "r") as file:
-    return yaml.safe_load(file)
+  try:
+    with open(path, "r") as file:
+      return yaml.safe_load(file)
+  except Exception as e:
+    print(f"[!] Erro ao carregar config.yaml: {e}")
+    sys.exit(1)
+  
   
 
 # ===== Carrega lista de payloads =====
@@ -16,32 +21,42 @@ def load_payloads(payload_file):
     
   except FileNotFoundError:
     print(f"[!] Não foi possível encontrar o arquivo: {payload_file}")
-    sys.exit(0)
+    sys.exit(1)
   
   
 # ===== Tela de Boas-Vindas =====
-def show_banner():
-    print("""
-    ╔════════════════════════════════════════════════════╗
-    ║             Xis Essi Essi - XSS Scanner            ║
-    ║        Scanner simples e extensível para XSS       ║
-    ║     Desenvolvido para fins educacionais e testes   ║
-    ╚════════════════════════════════════════════════════╝
+def show_banner(mode):
+    if mode == "full":
+      print("""
+╔════════════════════════════════════════════════════╗
+║             Xis Essi Essi - XSS Scanner            ║
+║        Scanner simples e extensível para XSS       ║
+║     Desenvolvido para fins educacionais e testes   ║
+╚════════════════════════════════════════════════════╝
 
-    Uso:
-        python3 xis-essi-essi.py -u "https://alvo.com"
+Uso:
+    python3 xis-essi-essi.py -u "https://alvo.com"
 
-    Opções:
-        -u / --url        Site alvo para teste (obrigatório)
-        -p / --payloads   Caminho para o arquivo de payloads (opcional, arquivo padrão no yaml)
-
-    """)
+Opções:
+    -u / --url        Site alvo para teste (obrigatório)
+    -p / --payloads   Caminho para o arquivo de payloads (opcional, arquivo padrão no yaml)
+""")
+      
+    else: 
+      print("""
+╔════════════════════════════════════════════════════╗
+║             Xis Essi Essi - XSS Scanner            ║
+║        Scanner simples e extensível para XSS       ║
+║     Desenvolvido para fins educacionais e testes   ║
+╚════════════════════════════════════════════════════╝
+""")
   
   
 # ===== Modifica ArgumentParser para adicionar tela no -h =====
 class CustomArgumentParser(argparse.ArgumentParser):
     def print_help(self, file=None):
-        show_banner()  # Exibe o banner quando -h ou --help é chamado
+        show_banner("basic")  # Exibe o banner quando -h ou --help é chamado
+        super().print_help(file)
   
   
 # ===== Main =====  
@@ -49,7 +64,7 @@ if __name__ == "__main__":
   config = load_config()
   
   if len(sys.argv) == 1:
-    show_banner()
+    show_banner("full")
     sys.exit(0)
   
   # CLI args
