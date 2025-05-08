@@ -10,8 +10,13 @@ def load_config(path="config.yaml"):
 
 # ===== Carrega lista de payloads =====
 def load_payloads(payload_file):
-  with open(payload_file, "r") as file:
-    return [line.strip() for line in file if line.strip()]
+  try:
+    with open(payload_file, "r") as file:
+      return [line.strip() for line in file if line.strip()]
+    
+  except FileNotFoundError:
+    print(f"[!] Não foi possível encontrar o arquivo: {payload_file}")
+    sys.exit(0)
   
   
 # ===== Tela de Boas-Vindas =====
