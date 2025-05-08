@@ -1,5 +1,6 @@
 import yaml
 import argparse
+import sys
 
 # ===== Carrega yaml =====
 def load_config(path="config.yaml"):
@@ -13,9 +14,32 @@ def load_payloads(payload_file):
     return [line.strip() for line in file if line.strip()]
   
   
+# ===== Tela de Boas-Vindas =====
+def show_banner():
+    print("""
+    ╔════════════════════════════════════════════════════╗
+    ║             Xis Essi Essi - XSS Scanner            ║
+    ║        Scanner simples e extensível para XSS       ║
+    ║     Desenvolvido para fins educacionais e testes   ║
+    ╚════════════════════════════════════════════════════╝
+
+    Uso:
+        python3 xis-essi-essi.py -u "https://alvo.com"
+
+    Opções:
+        -u / --url        Site alvo para teste (obrigatório)
+        -p / --payloads   Caminho para o arquivo de payloads (opcional, arquivo padrão no yaml)
+
+    """)
+  
+  
 # ===== Main =====  
 if __name__ == "__main__":
   config = load_config()
+  
+  if len(sys.argv) == 1:
+    show_banner()
+    sys.exit(0)
   
   # CLI args
   parser = argparse.ArgumentParser(description="XSS Scanner (xis-essi-essi!)")
