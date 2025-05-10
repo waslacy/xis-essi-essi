@@ -1,7 +1,8 @@
 import yaml
 import argparse
 import sys
-from crawler import crawl_site
+import asyncio
+from crawler import crawl
 
 # ===== Loads yaml =====
 def load_config(path="config.yaml"):
@@ -71,12 +72,13 @@ if __name__ == "__main__":
 	delay = config.get("delay_between_requests", 1)
 	use_browser = config.get("use_headless_browser", False)
 	depth = config.get("max_depth", 3)
+	num_threads = config.get("num_threads", 3)
 
 	# load payloads
 	payloads = load_payloads(args.payloads)
 
 	#testing crawler
-	urls = crawl_site(args.url, depth, delay, headers)
+	urls = asyncio.run(crawl(args.url, depth, delay, headers))
 	print(urls)
 
 	# testing imports
