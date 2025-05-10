@@ -1,12 +1,12 @@
-# Configurações gerais
+# General Configuration
 user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
-delay_between_requests: 0.5  # em segundos
-max_depth: 3  # nível máximo de crawling
+delay_between_requests: 0.5  # second
+max_depth: 3  # max crawling depth
 payloads_file: "./payloads.txt"
 
-# Análise de resposta
-use_headless_browser: false  # ativa Selenium para detectar execução real
+# Response analysis
+use_headless_browser: false  # Selenium
 
-# Relatório
+# Report
 save_report: true
-report_format: "json"  # ou "csv"
+report_format: "json"  # or "csv"

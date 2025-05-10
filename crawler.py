@@ -1,27 +1,25 @@
-import requests
+import asyncio
 from urllib.parse import urljoin, urlparse, urlunparse
 from bs4 import BeautifulSoup
-import time
+import aiohttp
 
+visited = set()
+found_urls = set()
 base_domain = ""
-
+semaphore = asyncio.Semaphore(10) 
 
 def normalize_url(url):
     parsed = urlparse(url)
     path = parsed.path.rstrip('/') or '/'
-    normalized = urlunparse(parsed._replace(path=path))
-    return normalized
-
+    return urlunparse(parsed._replace(path=path, fragment=''))
 
 def is_valid_url(url):
-    global base_domain
     parsed = urlparse(url)
-
-    if parsed.scheme not in ("http", "https", ""):
+    
+    if '#' in parsed.path:
         return False
-
-    return parsed.netloc == base_domain or parsed.netloc == ''
-
+    
+    return (parsed.netloc == base_domain or parsed.netloc == '') and parsed.scheme in ("http", "https")
 
 def is_media_file(url):
     return url.lower().endswith((
@@ -30,62 +28,74 @@ def is_media_file(url):
         '.zip', '.rar', '.mp3', '.mp4', '.avi', '.mov', '.exe'
     ))
 
-
 def get_links_from_html(html, base_url):
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, "lxml")
     links = set()
-
+    
     for tag in soup.find_all("a", href=True):
         full_url = urljoin(base_url, tag["href"])
-        normalized_url = normalize_url(full_url)
-
-        if is_valid_url(normalized_url) and not is_media_file(normalized_url):
-            links.add(normalized_url)
-
+        norm_url = normalize_url(full_url)
+        
+        if is_valid_url(norm_url) and not is_media_file(norm_url):
+            links.add(norm_url)
+            
     return links
 
-# ========== CRAWLER ==========
-def crawl_site(start_url, max_depth, delay, headers=None):
-    visited = set()
-    to_visit = [(start_url, 0)]
-    found_urls = set()
-
-    global base_domain
-    base_domain = urlparse(start_url).netloc
-    print(f"base domain: {base_domain}")
-
-    while to_visit:
-        current_url, depth = to_visit.pop(0)
-        normalized_current = normalize_url(current_url)
-
-        if normalized_current in visited or depth > max_depth:
-            continue
-
-        visited.add(normalized_current)
-
+async def worker(queue, session, max_depth, delay):
+    while True:
         try:
-            print(f"[+] Visitando: {current_url}")
-            response = requests.get(current_url, headers=headers, timeout=10)
-
-            if "text/html" not in response.headers.get("Content-Type", ""):
+            url, depth = await queue.get()
+            if url in visited or depth > max_depth:
+                queue.task_done()
                 continue
 
-            links = get_links_from_html(response.text, current_url)
-            for link in links:
-                next_depth = depth + 1
-                if (
-                    link not in visited and
-                    next_depth <= max_depth and
-                    (link, next_depth) not in to_visit
-                ):
-                    to_visit.append((link, next_depth))
+            async with semaphore:
+                print(f"[+] Visiting: {url}")
+                visited.add(url)
 
-            time.sleep(delay)
+                try:
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                        if resp.status != 200 or "text/html" not in resp.headers.get("Content-Type", ""):
+                            queue.task_done()
+                            continue
+                        
+                        html = await resp.text()
+                        found_urls.add(url)
+                        
+                        if depth < max_depth:
+                            links = get_links_from_html(html, url)
+                            
+                            for link in links:
+                                if link not in visited:
+                                    await queue.put((link, depth + 1))
+                                    
+                        await asyncio.sleep(delay)
+                        
+                except Exception as e:
+                    print(f"[!] Error: {url} -> {e}")
+                    
+            queue.task_done()
+            
+        except asyncio.CancelledError:
+            break
 
-        except Exception as e:
-            print(f"[!] Erro ao acessar {current_url}: {e}")
+async def crawl(start_url, max_depth, delay, headers=None):
+    global base_domain, visited, found_urls
+    base_domain = urlparse(start_url).netloc
 
-        found_urls.add(normalized_current)
+    visited.clear()
+    found_urls.clear()
 
-    # Retorna apenas URLs com parâmetros e sem comportamento suspeito
+    queue = asyncio.Queue()
+    await queue.put((start_url, 0))
+
+    async with aiohttp.ClientSession(headers=headers) as session:
+        workers = [asyncio.create_task(worker(queue, session, max_depth, delay)) for _ in range(10)]
+        
+        await queue.join()
+        for w in workers:
+            w.cancel()
+            
+        await asyncio.gather(*workers, return_exceptions=True)
+
     return [url for url in found_urls if "?" in url and "=" in url]
