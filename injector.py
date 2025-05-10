@@ -33,7 +33,7 @@ async def test_url(session, url, payload):
     return False
     
     
-async def injector(urls, payloads, delay, headers):
+async def injector(urls, payloads, headers):
     vulnerable_urls = []
     
     async with aiohttp.ClientSession(headers=headers) as session:

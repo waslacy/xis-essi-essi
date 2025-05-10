@@ -23,6 +23,9 @@ def dedup_endpoints(urls):
             
     return unique_urls
 
+def normalize_domain(domain):
+    return domain.lower().removeprefix("www.")
+
 def normalize_url(url):
     parsed = urlparse(url)
     path = parsed.path.rstrip('/') or '/'
@@ -96,7 +99,7 @@ async def worker(queue, session, max_depth, delay):
 
 async def crawl(start_url, max_depth, delay, headers=None):
     global base_domain, visited, found_urls
-    base_domain = urlparse(start_url).netloc
+    base_domain = normalize_domain(urlparse(start_url).netloc)
 
     visited.clear()
     found_urls.clear()
