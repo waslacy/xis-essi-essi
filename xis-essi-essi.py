@@ -3,6 +3,7 @@ import argparse
 import sys
 import asyncio
 from crawler import crawl
+from injector import injector
 
 # ===== Loads yaml =====
 def load_config(path="config.yaml"):
@@ -79,8 +80,7 @@ if __name__ == "__main__":
 
 	# run URL crawler
 	exploitable_urls = asyncio.run(crawl(args.url, depth, delay, headers))
- 
-	print(exploitable_urls)
-
-	# try injections on possibly exploitable URLs
-  
+	
+	print("[!] Iniciando injector [!]")
+	vulnerable_urls = asyncio.run(injector(exploitable_urls, payloads, delay, headers))
+	print(vulnerable_urls)
