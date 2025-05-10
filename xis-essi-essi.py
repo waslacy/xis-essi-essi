@@ -3,6 +3,7 @@ import argparse
 import sys
 import asyncio
 from crawler import crawl
+from injector import injector
 
 # ===== Loads yaml =====
 def load_config(path="config.yaml"):
@@ -77,24 +78,9 @@ if __name__ == "__main__":
 	# load payloads
 	payloads = load_payloads(args.payloads)
 
-	#testing crawler
-	urls = asyncio.run(crawl(args.url, depth, delay, headers))
-	print(urls)
-
-	# testing imports
-	# print("\n============ CONFIG ============")
-	# print(f"URL:          {args.url}")
-	# print(f"headers:      {headers}")
-	# print(f"delay:        {delay}s")
-	# print(f"use_browser:  {use_browser}")
-	# print(f"depth:        {depth}")
-	# print(f"payload file: {args.payloads}")
-
-	# print("\n======= PAYLOADS LOADED ========")
-
-	# if payloads:
-	#   for i, p in enumerate(payloads, 1):
-	#     print(f"{i:02d}: {p}")
-		
-	# else:
-	#   print("[!] No payloads found!")
+	# run URL crawler
+	exploitable_urls = asyncio.run(crawl(args.url, depth, delay, headers))
+	
+	print("[!] Iniciando injector [!]")
+	vulnerable_urls = asyncio.run(injector(exploitable_urls, payloads, delay, headers))
+	print(vulnerable_urls)
