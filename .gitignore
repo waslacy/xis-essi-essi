@@ -1,2 +1,23 @@
-__pycache__
-.vscode
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env/
+.venv/
+
+# VS Code config
+.vscode/
+
+# MacOS / Linux system files
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks checkpoints (se usar)
+.ipynb_checkpoints/
+
+# Logs e arquivos temporários
+*.log
+*.tmp
