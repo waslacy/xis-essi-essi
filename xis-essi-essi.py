@@ -2,10 +2,11 @@ import yaml
 import argparse
 import sys
 import asyncio
+import os
 from crawler import crawl
 
 # ===== Loads yaml =====
-def load_config(path="config.yaml"):
+def load_config(path=f"{os.path.dirname(os.path.abspath(__file__))}/config.yaml"):
 	try:
 		with open(path, "r") as file:
 			return yaml.safe_load(file)
@@ -76,6 +77,7 @@ if __name__ == "__main__":
 
 	# load payloads
 	payloads = load_payloads(args.payloads)
+	formated_payload_path = f"{os.path.dirname(os.path.abspath(__file__))}/{args.payloads}"
 
 	#testing crawler
 	urls = asyncio.run(crawl(args.url, depth, delay, headers))
