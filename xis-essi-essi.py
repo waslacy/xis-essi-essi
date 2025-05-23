@@ -1,12 +1,13 @@
 import yaml
 import argparse
 import sys
+import os
 import asyncio
 from crawler import crawl
 from injector import injector
 
 # ===== Loads yaml =====
-def load_config(path="config.yaml"):
+def load_config(path=f"{os.path.dirname(os.path.abspath(__file__))}/config.yaml"):
 	try:
 		with open(path, "r") as file:
 			return yaml.safe_load(file)
@@ -75,7 +76,8 @@ async def main():
     num_threads = config.get("num_threads", 3)
 
     # load payloads
-    payloads = load_payloads(args.payloads)
+    formated_payload_path = f"{os.path.dirname(os.path.abspath(__file__))}/{args.payloads}"
+    payloads = load_payloads(formated_payload_path)
 
     # run URL crawler
     exploitable_urls = await crawl(args.url, depth, delay, headers)
