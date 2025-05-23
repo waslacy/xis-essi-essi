@@ -1,5 +1,5 @@
 import asyncio
-from urllib.parse import urljoin, urlparse, urlunparse
+from urllib.parse import urljoin, urlparse, urlunparse, parse_qs
 from bs4 import BeautifulSoup
 import aiohttp
 
@@ -7,6 +7,24 @@ visited = set()
 found_urls = set()
 base_domain = ""
 semaphore = asyncio.Semaphore(10) 
+
+def dedup_endpoints(urls):
+    seen = set()
+    unique_urls = []
+    
+    for url in urls:
+        parsed = urlparse(url)
+        param_keys = frozenset(parse_qs(parsed.query).keys())
+        identifier = (parsed.path, param_keys)
+        
+        if param_keys and identifier not in seen:
+            seen.add(identifier)
+            unique_urls.append(url)
+            
+    return unique_urls
+
+def normalize_domain(domain):
+    return domain.lower().removeprefix("www.")
 
 def normalize_url(url):
     parsed = urlparse(url)
@@ -81,7 +99,7 @@ async def worker(queue, session, max_depth, delay):
 
 async def crawl(start_url, max_depth, delay, headers=None):
     global base_domain, visited, found_urls
-    base_domain = urlparse(start_url).netloc
+    base_domain = normalize_domain(urlparse(start_url).netloc)
 
     visited.clear()
     found_urls.clear()
@@ -98,4 +116,6 @@ async def crawl(start_url, max_depth, delay, headers=None):
             
         await asyncio.gather(*workers, return_exceptions=True)
 
-    return [url for url in found_urls if "?" in url and "=" in url]
+    
+    filtered_urls = [url for url in found_urls if "?" in url and "=" in url]
+    return dedup_endpoints(filtered_urls)

@@ -1,11 +1,13 @@
 import yaml
 import argparse
 import sys
+import os
 import asyncio
 from crawler import crawl
+from injector import injector
 
 # ===== Loads yaml =====
-def load_config(path="config.yaml"):
+def load_config(path=f"{os.path.dirname(os.path.abspath(__file__))}/config.yaml"):
 	try:
 		with open(path, "r") as file:
 			return yaml.safe_load(file)
@@ -49,52 +51,41 @@ class CustomArgumentParser(argparse.ArgumentParser):
     def print_help(self, file=None):
         show_banner("basic")
         super().print_help(file)
+        
 
+async def main():
+    config = load_config()
+
+    if len(sys.argv) == 1:
+        show_banner("full")
+        sys.exit(0)
+
+    # CLI args
+    parser = CustomArgumentParser(description="XSS Scanner (xis-essi-essi!)")
+    parser.add_argument("-u", "--url", required=True, help="Target Site")
+    parser.add_argument("-p", "--payloads", default=config.get("payloads_file", "payloads.txt"), help="Payloads list")
+    args = parser.parse_args()
+
+    # YAML params
+    headers = {
+        "User-Agent": config["user_agent"]
+    }
+    delay = config.get("delay_between_requests", 1)
+    use_browser = config.get("use_headless_browser", False)
+    depth = config.get("max_depth", 3)
+    num_threads = config.get("num_threads", 3)
+
+    # load payloads
+    formated_payload_path = f"{os.path.dirname(os.path.abspath(__file__))}/{args.payloads}"
+    payloads = load_payloads(formated_payload_path)
+
+    # run URL crawler
+    exploitable_urls = await crawl(args.url, depth, delay, headers)
+
+    print("[!] Iniciando injector [!]")
+    vulnerable_urls = await injector(exploitable_urls, payloads, headers)
+    print(vulnerable_urls)
 
 # ===== Main =====  
 if __name__ == "__main__":
-	config = load_config()
-
-	if len(sys.argv) == 1:
-		show_banner("full")
-		sys.exit(0)
-
-	# CLI args
-	parser = CustomArgumentParser(description="XSS Scanner (xis-essi-essi!)")
-	parser.add_argument("-u", "--url", required=True, help="Target Site")
-	parser.add_argument("-p", "--payloads", default=config.get("payloads_file", "payloads.txt"), help="Payloads list")
-	args = parser.parse_args()
-
-	# YAML params
-	headers = {
-		"User-Agent": config["user_agent"]
-	}
-	delay = config.get("delay_between_requests", 1)
-	use_browser = config.get("use_headless_browser", False)
-	depth = config.get("max_depth", 3)
-	num_threads = config.get("num_threads", 3)
-
-	# load payloads
-	payloads = load_payloads(args.payloads)
-
-	#testing crawler
-	urls = asyncio.run(crawl(args.url, depth, delay, headers))
-	print(urls)
-
-	# testing imports
-	# print("\n============ CONFIG ============")
-	# print(f"URL:          {args.url}")
-	# print(f"headers:      {headers}")
-	# print(f"delay:        {delay}s")
-	# print(f"use_browser:  {use_browser}")
-	# print(f"depth:        {depth}")
-	# print(f"payload file: {args.payloads}")
-
-	# print("\n======= PAYLOADS LOADED ========")
-
-	# if payloads:
-	#   for i, p in enumerate(payloads, 1):
-	#     print(f"{i:02d}: {p}")
-		
-	# else:
-	#   print("[!] No payloads found!")
+    asyncio.run(main())
