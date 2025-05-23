@@ -80,9 +80,9 @@ async def main():
     # run URL crawler
     exploitable_urls = await crawl(args.url, depth, delay, headers)
 
-    # print("[!] Iniciando injector [!]")
-    # vulnerable_urls = await injector(exploitable_urls, payloads, headers)
-    # print(vulnerable_urls)
+    print("[!] Iniciando injector [!]")
+    vulnerable_urls = await injector(exploitable_urls, payloads, headers)
+    print(vulnerable_urls)
 
 # ===== Main =====  
 if __name__ == "__main__":

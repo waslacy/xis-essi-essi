@@ -20,7 +20,7 @@ async def test_url(session, url, payload):
         test_url = inject_payload(url, payload)
         
         try:
-            async with session.get(test_url, timeout=10) as resp:
+            async with session.get(test_url, timeout=20) as resp:
                 text = await resp.text()
                 
                 if payload in text:
